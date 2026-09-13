@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -12,7 +13,25 @@ function LoginPage() {
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    login(email, password);
+    setError("");
+
+    const trimmedEmail = email.trim();
+
+    // Перевірка email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setError("Введіть коректну електронну пошту.");
+      return;
+    }
+
+    // Перевірка пароля
+    if (!password) {
+      setError("Введіть пароль.");
+      return;
+    }
+
+    login(trimmedEmail, password);
 
     navigate("/notes");
   };
@@ -28,7 +47,9 @@ function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Електронна пошта</label>
+            <label htmlFor="email">
+              Електронна пошта
+            </label>
 
             <input
               id="email"
@@ -41,7 +62,9 @@ function LoginPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Пароль</label>
+            <label htmlFor="password">
+              Пароль
+            </label>
 
             <input
               id="password"
@@ -53,14 +76,25 @@ function LoginPage() {
             />
           </div>
 
-          <button type="submit" className="auth-button">
+          {error && (
+            <p className="form-error">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            className="auth-button"
+          >
             Увійти
           </button>
         </form>
 
         <p className="auth-footer">
           Ще немає акаунта?{" "}
-          <Link to="/register">Зареєструватися</Link>
+          <Link to="/register">
+            Зареєструватися
+          </Link>
         </p>
       </div>
     </div>

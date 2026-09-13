@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import NotesPage from "./pages/NotesPage";
 import { useAuth } from "./context/AuthContext";
+import AccountSettingsPage from "./pages/AccountSettingsPage";
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -29,6 +30,15 @@ function App() {
           element={
             <ProtectedRoute>
               <NotesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <AccountSettingsPage />
             </ProtectedRoute>
           }
         />

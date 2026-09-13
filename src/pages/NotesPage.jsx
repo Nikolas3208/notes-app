@@ -1,33 +1,48 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
+import Header from "../components/Header/Header";
+import NoteList from "../components/NoteList/NoteList";
+import NoteEditor from "../components/NoteEditor/NoteEditor";
+
 function NotesPage() {
   const { user, logout } = useAuth();
 
   const [notes, setNotes] = useState(() => {
     const savedNotes = localStorage.getItem(
-        `notes_${user.email}`
+      `notes_${user.email}`
     );
 
     return savedNotes ? JSON.parse(savedNotes) : [];
   });
+
   const [selectedNoteId, setSelectedNoteId] = useState(null);
+  const [deleteNoteId, setDeleteNoteId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     localStorage.setItem(
-        `notes_${user.email}`,
-        JSON.stringify(notes)
+      `notes_${user.email}`,
+      JSON.stringify(notes)
     );
   }, [notes, user.email]);
+
   const selectedNote = notes.find(
     (note) => note.id === selectedNoteId
   );
 
+  /* =========================
+     СТВОРЕННЯ НОТАТКИ
+     ========================= */
+
   const createNote = () => {
+    const currentTime = new Date().toISOString();
+
     const newNote = {
       id: Date.now(),
       title: "Нова нотатка",
       content: "",
+      lastModified: currentTime,
     };
 
     setNotes((currentNotes) => [
@@ -38,15 +53,27 @@ function NotesPage() {
     setSelectedNoteId(newNote.id);
   };
 
+  /* =========================
+     РЕДАГУВАННЯ НОТАТКИ
+     ========================= */
+
   const updateNote = (field, value) => {
     setNotes((currentNotes) =>
       currentNotes.map((note) =>
         note.id === selectedNoteId
-          ? { ...note, [field]: value }
+          ? {
+              ...note,
+              [field]: value,
+              lastModified: new Date().toISOString(),
+            }
           : note
       )
     );
   };
+
+  /* =========================
+     ВИДАЛЕННЯ НОТАТКИ
+     ========================= */
 
   const deleteNote = () => {
     if (!selectedNote) return;
@@ -60,130 +87,261 @@ function NotesPage() {
     setSelectedNoteId(null);
   };
 
+  const confirmDeleteNote = () => {
+    if (!deleteNoteId) return;
+
+    setNotes((currentNotes) =>
+      currentNotes.filter(
+        (note) => note.id !== deleteNoteId
+      )
+    );
+
+    if (selectedNoteId === deleteNoteId) {
+      setSelectedNoteId(null);
+    }
+
+    setDeleteNoteId(null);
+  };
+
+  /* =========================
+     ПОВЕРНЕННЯ ДО СПИСКУ
+     ========================= */
+
+  const closeNote = () => {
+    setSelectedNoteId(null);
+  };
+
+  /* =========================
+     ВІДОБРАЖЕННЯ
+     ========================= */
+
+  const filteredNotes = notes.filter((note) => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) return true;
+
+    const title = note.title || "";
+    const content = note.content || "";
+
+    return (
+      title.toLowerCase().includes(query) ||
+      content.toLowerCase().includes(query)
+    );
+  });
+
+  const hasNotes = notes.length > 0;
+  const isNoteOpened = selectedNote !== undefined;
+
   return (
     <div className="notes-page">
 
-      <header className="notes-header">
-        <div>
-          <h1>Мої нотатки</h1>
-          <p>Привіт, {user.name} 👋</p>
-        </div>
+      <Header
+        user={user}
+        onLogout={logout}
+      />
 
-        <div className="user-menu">
-          <div className="user-info">
-            <strong>{user.name}</strong>
-            <span>{user.email}</span>
-          </div>
+      {/* =========================
+          НЕМАЄ НОТАТОК
+          ========================= */}
 
+      {!hasNotes && (
+        <main className="notes-empty-page">
           <button
-            onClick={logout}
-            className="logout-button"
-          >
-            Вийти
-          </button>
-        </div>
-      </header>
-
-      <main className="notes-content">
-
-        <aside className="notes-sidebar">
-
-          <button
-            className="new-note-button"
+            className="empty-new-note-button"
             onClick={createNote}
           >
             + Нова нотатка
           </button>
+        </main>
+      )}
 
-          <div className="notes-list">
+      {/* =========================
+          Є НОТАТКИ, АЛЕ ЖОДНА
+          НЕ ВІДКРИТА
+          ========================= */}
 
-            {notes.length === 0 ? (
-              <p className="empty-notes">
-                У вас поки немає нотаток
-              </p>
-            ) : (
-              notes.map((note) => (
-                <button
+      {hasNotes && !isNoteOpened && (
+        <main className="notes-grid-page">
+
+          <div className="notes-search">
+            <span className="search-icon">⌕</span>
+
+            <input
+              type="text"
+              placeholder="Пошук нотаток..."
+              value={searchQuery}
+              onChange={(event) =>
+                setSearchQuery(event.target.value)
+              }
+            />
+
+            {searchQuery && (
+              <button
+                className="clear-search-button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Очистити пошук"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {filteredNotes.length > 0 ? (
+            <div className="notes-grid">
+
+              {filteredNotes.map((note) => (
+                <div
                   key={note.id}
-                  className={`note-item ${
-                    note.id === selectedNoteId
-                      ? "note-item-active"
+                  className={`notes-grid-card ${
+                    deleteNoteId === note.id
+                      ? "delete-selected"
                       : ""
                   }`}
-                  onClick={() =>
-                    setSelectedNoteId(note.id)
-                  }
+                  onClick={() => {
+                    if (deleteNoteId !== note.id) {
+                      setSelectedNoteId(note.id);
+                    }
+                  }}
                 >
-                  <strong>
+
+                  <h3>
                     {note.title || "Без назви"}
-                  </strong>
+                  </h3>
 
-                  <span>
+                  <hr />
+
+                  <p>
                     {note.content
-                      ? note.content.substring(0, 45)
+                      ? note.content.substring(0, 100)
                       : "Порожня нотатка"}
-                  </span>
-                </button>
-              ))
-            )}
+                  </p>
+                  
+                  {note.lastModified && (
+                    <span className="note-card-date">
+                      {new Date(note.lastModified).toLocaleDateString("uk-UA", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
+                    </span>
+                  )}
 
-          </div>
-        </aside>
+                  <button
+                    className="note-card-delete-button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDeleteNoteId(note.id);
+                    }}
+                    aria-label="Видалити нотатку"
+                  >
+                    🗑
+                  </button>
 
-        <section className="note-editor">
+                  {deleteNoteId === note.id && (
+                    <div
+                      className="delete-confirmation"
+                      onClick={(event) =>
+                        event.stopPropagation()
+                      }
+                    >
+                      <p>Точно видалити нотатку?</p>
 
-          {selectedNote ? (
-            <div className="editor-container">
+                      <div className="delete-confirmation-buttons">
 
-              <div className="editor-toolbar">
-                <button
-                  onClick={deleteNote}
-                  className="delete-note-button"
-                >
-                  Видалити
-                </button>
-              </div>
+                        <button
+                          onClick={() =>
+                            setDeleteNoteId(null)
+                          }
+                        >
+                          Ні
+                        </button>
 
-              <input
-                className="note-title-input"
-                type="text"
-                value={selectedNote.title}
-                onChange={(event) =>
-                  updateNote(
-                    "title",
-                    event.target.value
-                  )
-                }
-                placeholder="Назва нотатки"
-              />
+                        <button
+                          onClick={confirmDeleteNote}
+                        >
+                          Так
+                        </button>
 
-              <textarea
-                className="note-content-input"
-                value={selectedNote.content}
-                onChange={(event) =>
-                  updateNote(
-                    "content",
-                    event.target.value
-                  )
-                }
-                placeholder="Почніть писати..."
-              />
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              ))}
 
             </div>
           ) : (
-            <div className="empty-editor">
-              <h2>Оберіть нотатку</h2>
-
-              <p>
-                Або створіть нову, щоб почати
-                записувати свої думки.
-              </p>
+            <div className="no-search-results">
+              <p>Нічого не знайдено</p>
+              <span>
+                Спробуйте змінити пошуковий запит
+              </span>
             </div>
           )}
 
-        </section>
+          <button
+            className="floating-new-note-button"
+            onClick={createNote}
+            aria-label="Створити нову нотатку"
+          >
+            +
+          </button>
 
-      </main>
+        </main>
+      )}
+
+      {/* =========================
+          ВІДКРИТА НОТАТКА
+          ========================= */}
+
+      {hasNotes && isNoteOpened && (
+        <main className="notes-content">
+
+          <aside className="notes-sidebar">
+
+            <button
+              className="back-to-notes-button"
+              onClick={closeNote}
+            >
+              ← Усі нотатки
+            </button>
+
+            <div className="notes-list-container">
+              <NoteList
+                notes={notes}
+                selectedNoteId={selectedNoteId}
+                onSelectNote={setSelectedNoteId}
+              />
+            </div>
+
+            <button
+              className="sidebar-new-note-button"
+              onClick={createNote}
+              aria-label="Створити нову нотатку"
+            >
+              +
+            </button>
+
+          </aside>
+
+          <section className="note-editor">
+
+            <NoteEditor
+              note={selectedNote}
+              onTitleChange={(value) =>
+                updateNote("title", value)
+              }
+              onContentChange={(value) =>
+                updateNote("content", value)
+              }
+              onDelete={deleteNote}
+            />
+
+          </section>
+
+        </main>
+      )}
+
     </div>
   );
 }

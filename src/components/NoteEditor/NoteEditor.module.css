@@ -1,0 +1,114 @@
+.editor {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+
+  padding: 40px 50px;
+
+  background: #ffffff;
+  border: 2px solid #44517a;
+  border-radius: 20px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  width: 100%;
+
+  padding: 0;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  font-family: Georgia, serif;
+  font-size: 38px;
+  font-weight: 600;
+
+  color: #202522;
+}
+
+.title::placeholder {
+  color: #8b94a3;
+}
+
+.editor hr {
+  width: 100%;
+
+  margin: 15px 0 20px;
+
+  border: none;
+  border-top: 1px solid #44517a;
+}
+
+.content {
+  width: 100%;
+  flex: 1;
+
+  padding: 0;
+  resize: none;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  font-family: Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+
+  color: #404743;
+}
+
+.content::placeholder {
+  color: #8b94a3;
+}
+
+.deleteButton {
+  align-self: flex-end;
+
+  margin-top: 15px;
+  padding: 8px 16px;
+
+  border: 2px solid #44517a;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #44517a;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.deleteButton:hover {
+  background: #44517a;
+  color: #ffffff;
+}
+
+.empty {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+  border: 2px solid #44517a;
+  border-radius: 20px;
+
+  color: #687080;
+  font-size: 16px;
+}
+
+.date {
+  margin-top: 8px;
+  color: #8b94a3;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}

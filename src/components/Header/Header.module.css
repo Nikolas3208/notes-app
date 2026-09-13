@@ -1,0 +1,206 @@
+.header {
+  position: relative;
+  min-height: 80px;
+  padding: 15px 30px;
+  background: #fff;
+  border-bottom: 2px solid #44517a;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.titleBlock h1 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  color: #44517a;
+}
+
+.titleBlock p {
+  margin: 0;
+  color: #687080;
+  font-size: 14px;
+}
+
+/* =========================
+   ПРОФІЛЬ
+   ========================= */
+
+.profile {
+  position: relative;
+}
+
+/* Кругла аватарка */
+
+.avatarButton {
+  width: 46px;
+  height: 46px;
+
+  padding: 0;
+
+  border: 2px solid #cedce9;
+  border-radius: 50%;
+
+  background: #cedce9;
+  color: #44517a;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.avatarButton:hover {
+  border-color: #44517a;
+  box-shadow: 0 0 0 3px rgba(68, 81, 122, 0.18);
+  transform: scale(1.05);
+}
+
+/* =========================
+   ВИПАДАЮЧЕ МЕНЮ
+   ========================= */
+
+.profileMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+
+  width: 260px;
+
+  padding: 14px;
+
+  background: #fff;
+  border: 2px solid #cedce9;
+  border-radius: 14px;
+
+  box-shadow: 0 10px 30px rgba(68, 81, 122, 0.18);
+
+  z-index: 100;
+}
+
+/* Інформація про користувача */
+
+.profileInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 4px;
+}
+
+.profileInfo > div:last-child {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profileInfo strong {
+  color: #30394f;
+  font-size: 14px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileInfo span {
+  color: #687080;
+  font-size: 12px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Маленька аватарка всередині меню */
+
+.menuAvatar {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+  background: #cedce9;
+  color: #44517a;
+
+  font-size: 16px;
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Лінія */
+
+.menuDivider {
+  height: 1px;
+  margin: 12px 0;
+
+  background: #cedce9;
+}
+
+/* Пункти меню */
+
+.menuItem {
+  width: 100%;
+
+  padding: 10px 9px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #30394f;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 14px;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.menuItem:hover {
+  background: #cedce9;
+  color: #44517a;
+}
+
+.menuItem:first-letter {
+  font-size: 17px;
+}
+
+.logoutItem {
+  color: #44517a;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.menuAvatarImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 50%;
+}

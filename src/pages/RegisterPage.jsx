@@ -18,17 +18,36 @@ function RegisterPage() {
 
     setError("");
 
-    if (password.length < 6) {
-      setError("Пароль повинен містити що найменше 6 символів.");
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    // Перевірка імені
+    if (!trimmedName) {
+      setError("Введіть ім'я.");
       return;
     }
 
+    // Перевірка email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(trimmedEmail)) {
+      setError("Введіть коректну електронну пошту.");
+      return;
+    }
+
+    // Перевірка пароля
+    if (password.length < 6) {
+      setError("Пароль повинен містити щонайменше 6 символів.");
+      return;
+    }
+
+    // Перевірка підтвердження пароля
     if (password !== confirmPassword) {
       setError("Паролі не співпадають.");
       return;
     }
 
-    register(name, email, password);
+    register(trimmedName, trimmedEmail, password);
 
     navigate("/notes");
   };
@@ -73,25 +92,25 @@ function RegisterPage() {
             <label htmlFor="password">Пароль</label>
 
             <input
-                id="password"
-                type="password"
-                placeholder="Створіть пароль"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                onFocus={() => setIsPasswordFocused(true)}
-                onBlur={() => setIsPasswordFocused(false)}
-                required
+              id="password"
+              type="password"
+              placeholder="Створіть пароль"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              onFocus={() => setIsPasswordFocused(true)}
+              onBlur={() => setIsPasswordFocused(false)}
+              required
             />
 
             {isPasswordFocused && (
-            <p
+              <p
                 className={`password-hint ${
-                password.length >= 6 ? "password-valid" : ""
+                  password.length >= 6 ? "password-valid" : ""
                 }`}
-            >
+              >
                 {password.length >= 6 && "✓ "}
                 Мінімум 6 символів
-            </p>
+              </p>
             )}
           </div>
 
@@ -105,7 +124,9 @@ function RegisterPage() {
               type="password"
               placeholder="Повторіть пароль"
               value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
+              onChange={(event) =>
+                setConfirmPassword(event.target.value)
+              }
               required
             />
           </div>

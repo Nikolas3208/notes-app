@@ -1,0 +1,97 @@
+.noteCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+
+  padding: 13px;
+  margin-bottom: 8px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: transparent;
+
+  text-align: left;
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.noteCard:hover {
+  background: #f5f7f6;
+}
+
+.noteCard h3 {
+  width: 100%;
+  margin: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #303633;
+  font-size: 14px;
+}
+
+.noteCard hr {
+  width: 100%;
+  margin: 0;
+
+  border: none;
+  border-top: 1px solid #d9dedb;
+}
+
+.noteCard p {
+  width: 100%;
+  margin: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #929894;
+  font-size: 12px;
+}
+
+.active {
+  background: #edf4ef;
+}
+
+.active:hover {
+  background: #edf4ef;
+}
+
+.noteCard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 13px;
+  margin-bottom: 8px;
+
+  border: 2px solid #cedce9;
+  border-radius: 10px;
+
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.noteCard:hover {
+  background: #f5f7f6;
+  border-color: #cedce9;
+}
+
+.active {
+  background: #edf4ef;
+  border-color: #44517a;
+}
+
+.active:hover {
+  background: #edf4ef;
+  border-color: #44517a;
+}
