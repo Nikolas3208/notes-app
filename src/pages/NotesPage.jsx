@@ -1,106 +1,116 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNotes } from "../context/NoteContext";
 
 import Header from "../components/Header/Header";
 import NoteList from "../components/NoteList/NoteList";
 import NoteEditor from "../components/NoteEditor/NoteEditor";
 
+const SAVE_DEBOUNCE_MS = 600;
+
 function NotesPage() {
   const { user, logout } = useAuth();
-
-  const [notes, setNotes] = useState(() => {
-    const savedNotes = localStorage.getItem(
-      `notes_${user.email}`
-    );
-
-    return savedNotes ? JSON.parse(savedNotes) : [];
-  });
+  const { notes, loading, fetchNotes, addNote, editNote, removeNote } =
+    useNotes();
 
   const [selectedNoteId, setSelectedNoteId] = useState(null);
   const [deleteNoteId, setDeleteNoteId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    localStorage.setItem(
-      `notes_${user.email}`,
-      JSON.stringify(notes)
-    );
-  }, [notes, user.email]);
+  // Локальний чернетковий стан для нотатки, що редагується —
+  // щоб не бити запит на сервер на кожне натискання клавіші.
+  const [draft, setDraft] = useState({ title: "", content: "" });
+  const saveTimerRef = useRef(null);
 
-  const selectedNote = notes.find(
-    (note) => note.id === selectedNoteId
-  );
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
+  const selectedNote = notes.find((note) => note.id === selectedNoteId);
+
+  useEffect(() => {
+    if (selectedNote) {
+      setDraft({
+        title: selectedNote.title ?? "",
+        content: selectedNote.text ?? selectedNote.content ?? ""
+      });
+    }
+  }, [selectedNoteId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const flushPendingSave = () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+  };
+
+  const scheduleSave = (nextDraft) => {
+    flushPendingSave();
+    saveTimerRef.current = setTimeout(() => {
+      if (!selectedNoteId) return;
+      editNote(selectedNoteId, nextDraft.title, nextDraft.content).catch(
+        (err) => console.error("Не вдалося зберегти нотатку", err)
+      );
+    }, SAVE_DEBOUNCE_MS);
+  };
 
   /* =========================
      СТВОРЕННЯ НОТАТКИ
      ========================= */
 
-  const createNote = () => {
-    const currentTime = new Date().toISOString();
-
-    const newNote = {
-      id: Date.now(),
-      title: "Нова нотатка",
-      content: "",
-      lastModified: currentTime,
-    };
-
-    setNotes((currentNotes) => [
-      newNote,
-      ...currentNotes,
-    ]);
-
-    setSelectedNoteId(newNote.id);
+  const createNote = async () => {
+    try {
+      const newNote = await addNote("Нова нотатка", "");
+      setSelectedNoteId(newNote.id);
+    } catch (err) {
+      console.error("Не вдалося створити нотатку", err);
+    }
   };
 
   /* =========================
      РЕДАГУВАННЯ НОТАТКИ
      ========================= */
 
-  const updateNote = (field, value) => {
-    setNotes((currentNotes) =>
-      currentNotes.map((note) =>
-        note.id === selectedNoteId
-          ? {
-              ...note,
-              [field]: value,
-              lastModified: new Date().toISOString(),
-            }
-          : note
-      )
-    );
+  const updateTitle = (value) => {
+    const next = { ...draft, title: value };
+    setDraft(next);
+    scheduleSave(next);
+  };
+
+  const updateContent = (value) => {
+    const next = { ...draft, content: value };
+    setDraft(next);
+    scheduleSave(next);
   };
 
   /* =========================
      ВИДАЛЕННЯ НОТАТКИ
      ========================= */
 
-  const deleteNote = () => {
+  const deleteNote = async () => {
     if (!selectedNote) return;
-
-    setNotes((currentNotes) =>
-      currentNotes.filter(
-        (note) => note.id !== selectedNoteId
-      )
-    );
-
-    setSelectedNoteId(null);
+    flushPendingSave();
+    try {
+      await removeNote(selectedNoteId);
+      setSelectedNoteId(null);
+    } catch (err) {
+      console.error("Не вдалося видалити нотатку", err);
+    }
   };
 
-  const confirmDeleteNote = () => {
+  const confirmDeleteNote = async () => {
     if (!deleteNoteId) return;
-
-    setNotes((currentNotes) =>
-      currentNotes.filter(
-        (note) => note.id !== deleteNoteId
-      )
-    );
-
-    if (selectedNoteId === deleteNoteId) {
-      setSelectedNoteId(null);
+    try {
+      await removeNote(deleteNoteId);
+      if (selectedNoteId === deleteNoteId) {
+        flushPendingSave();
+        setSelectedNoteId(null);
+      }
+    } catch (err) {
+      console.error("Не вдалося видалити нотатку", err);
+    } finally {
+      setDeleteNoteId(null);
     }
-
-    setDeleteNoteId(null);
   };
 
   /* =========================
@@ -108,6 +118,13 @@ function NotesPage() {
      ========================= */
 
   const closeNote = () => {
+    flushPendingSave();
+    if (selectedNoteId) {
+      // синхронно "доганяємо" останні незбережені зміни перед виходом
+      editNote(selectedNoteId, draft.title, draft.content).catch((err) =>
+        console.error("Не вдалося зберегти нотатку", err)
+      );
+    }
     setSelectedNoteId(null);
   };
 
@@ -117,11 +134,10 @@ function NotesPage() {
 
   const filteredNotes = notes.filter((note) => {
     const query = searchQuery.trim().toLowerCase();
-
     if (!query) return true;
 
     const title = note.title || "";
-    const content = note.content || "";
+    const content = note.text || note.content || "";
 
     return (
       title.toLowerCase().includes(query) ||
@@ -134,22 +150,21 @@ function NotesPage() {
 
   return (
     <div className="notes-page">
+      <Header user={user} onLogout={logout} />
 
-      <Header
-        user={user}
-        onLogout={logout}
-      />
+      {loading && notes.length === 0 && (
+        <main className="notes-loading">
+          <p>Завантаження нотаток...</p>
+        </main>
+      )}
 
       {/* =========================
           НЕМАЄ НОТАТОК
           ========================= */}
 
-      {!hasNotes && (
+      {!loading && !hasNotes && (
         <main className="notes-empty-page">
-          <button
-            className="empty-new-note-button"
-            onClick={createNote}
-          >
+          <button className="empty-new-note-button" onClick={createNote}>
             + Нова нотатка
           </button>
         </main>
@@ -162,7 +177,6 @@ function NotesPage() {
 
       {hasNotes && !isNoteOpened && (
         <main className="notes-grid-page">
-
           <div className="notes-search">
             <span className="search-icon">⌕</span>
 
@@ -170,9 +184,7 @@ function NotesPage() {
               type="text"
               placeholder="Пошук нотаток..."
               value={searchQuery}
-              onChange={(event) =>
-                setSearchQuery(event.target.value)
-              }
+              onChange={(event) => setSearchQuery(event.target.value)}
             />
 
             {searchQuery && (
@@ -188,14 +200,11 @@ function NotesPage() {
 
           {filteredNotes.length > 0 ? (
             <div className="notes-grid">
-
               {filteredNotes.map((note) => (
                 <div
                   key={note.id}
                   className={`notes-grid-card ${
-                    deleteNoteId === note.id
-                      ? "delete-selected"
-                      : ""
+                    deleteNoteId === note.id ? "delete-selected" : ""
                   }`}
                   onClick={() => {
                     if (deleteNoteId !== note.id) {
@@ -203,25 +212,24 @@ function NotesPage() {
                     }
                   }}
                 >
-
-                  <h3>
-                    {note.title || "Без назви"}
-                  </h3>
+                  <h3>{note.title || "Без назви"}</h3>
 
                   <hr />
 
                   <p>
-                    {note.content
-                      ? note.content.substring(0, 100)
+                    {note.text || note.content
+                      ? (note.text || note.content).substring(0, 100)
                       : "Порожня нотатка"}
                   </p>
-                  
-                  {note.lastModified && (
+
+                  {(note.lastModified || note.updatedAt) && (
                     <span className="note-card-date">
-                      {new Date(note.lastModified).toLocaleDateString("uk-UA", {
+                      {new Date(
+                        note.lastModified || note.updatedAt
+                      ).toLocaleDateString("uk-UA", {
                         day: "2-digit",
                         month: "2-digit",
-                        year: "numeric",
+                        year: "numeric"
                       })}
                     </span>
                   )}
@@ -240,42 +248,26 @@ function NotesPage() {
                   {deleteNoteId === note.id && (
                     <div
                       className="delete-confirmation"
-                      onClick={(event) =>
-                        event.stopPropagation()
-                      }
+                      onClick={(event) => event.stopPropagation()}
                     >
                       <p>Точно видалити нотатку?</p>
 
                       <div className="delete-confirmation-buttons">
-
-                        <button
-                          onClick={() =>
-                            setDeleteNoteId(null)
-                          }
-                        >
+                        <button onClick={() => setDeleteNoteId(null)}>
                           Ні
                         </button>
 
-                        <button
-                          onClick={confirmDeleteNote}
-                        >
-                          Так
-                        </button>
-
+                        <button onClick={confirmDeleteNote}>Так</button>
                       </div>
                     </div>
                   )}
-
                 </div>
               ))}
-
             </div>
           ) : (
             <div className="no-search-results">
               <p>Нічого не знайдено</p>
-              <span>
-                Спробуйте змінити пошуковий запит
-              </span>
+              <span>Спробуйте змінити пошуковий запит</span>
             </div>
           )}
 
@@ -286,7 +278,6 @@ function NotesPage() {
           >
             +
           </button>
-
         </main>
       )}
 
@@ -296,13 +287,8 @@ function NotesPage() {
 
       {hasNotes && isNoteOpened && (
         <main className="notes-content">
-
           <aside className="notes-sidebar">
-
-            <button
-              className="back-to-notes-button"
-              onClick={closeNote}
-            >
+            <button className="back-to-notes-button" onClick={closeNote}>
               ← Усі нотатки
             </button>
 
@@ -310,7 +296,15 @@ function NotesPage() {
               <NoteList
                 notes={notes}
                 selectedNoteId={selectedNoteId}
-                onSelectNote={setSelectedNoteId}
+                onSelectNote={(id) => {
+                  flushPendingSave();
+                  if (selectedNoteId) {
+                    editNote(selectedNoteId, draft.title, draft.content).catch(
+                      (err) => console.error("Не вдалося зберегти нотатку", err)
+                    );
+                  }
+                  setSelectedNoteId(id);
+                }}
               />
             </div>
 
@@ -321,27 +315,18 @@ function NotesPage() {
             >
               +
             </button>
-
           </aside>
 
           <section className="note-editor">
-
             <NoteEditor
-              note={selectedNote}
-              onTitleChange={(value) =>
-                updateNote("title", value)
-              }
-              onContentChange={(value) =>
-                updateNote("content", value)
-              }
+              note={selectedNote ? { ...selectedNote, content: draft.content, title: draft.title } : null}
+              onTitleChange={updateTitle}
+              onContentChange={updateContent}
               onDelete={deleteNote}
             />
-
           </section>
-
         </main>
       )}
-
     </div>
   );
 }

@@ -15,42 +15,41 @@ function RegisterPage() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-
     setError("");
 
     const trimmedName = name.trim();
     const trimmedEmail = email.trim();
 
-    // Перевірка імені
     if (!trimmedName) {
-      setError("Введіть ім'я.");
-      return;
+        setError("Введіть ім'я.");
+        return;
     }
 
-    // Перевірка email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(trimmedEmail)) {
-      setError("Введіть коректну електронну пошту.");
-      return;
+        setError("Введіть коректну електронну пошту.");
+        return;
     }
 
-    // Перевірка пароля
     if (password.length < 6) {
-      setError("Пароль повинен містити щонайменше 6 символів.");
-      return;
+        setError("Пароль повинен містити щонайменше 6 символів.");
+        return;
     }
 
-    // Перевірка підтвердження пароля
     if (password !== confirmPassword) {
-      setError("Паролі не співпадають.");
-      return;
+        setError("Паролі не співпадають.");
+        return;
     }
 
-    register(trimmedName, trimmedEmail, password);
-
-    navigate("/notes");
-  };
+    register(trimmedName, trimmedEmail, password)
+        .then(() => {
+            navigate("/notes");
+        })
+        .catch((error) => {
+            setError(error.message);
+        });
+};
 
   return (
     <div className="auth-page">

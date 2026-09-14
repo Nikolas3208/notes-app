@@ -10,9 +10,8 @@ function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-
     setError("");
 
     const trimmedEmail = email.trim();
@@ -21,20 +20,24 @@ function LoginPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailRegex.test(trimmedEmail)) {
-      setError("Введіть коректну електронну пошту.");
-      return;
+        setError("Введіть коректну електронну пошту.");
+        return;
     }
 
     // Перевірка пароля
     if (!password) {
-      setError("Введіть пароль.");
-      return;
+        setError("Введіть пароль.");
+        return;
     }
 
-    login(trimmedEmail, password);
+    try {
+        await login(trimmedEmail, password);
 
-    navigate("/notes");
-  };
+        navigate("/notes");
+    } catch (error) {
+        setError(error.message || "Помилка входу.");
+    }
+};
 
   return (
     <div className="auth-page">

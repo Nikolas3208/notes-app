@@ -8,7 +8,11 @@ import { useAuth } from "./context/AuthContext";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 
 function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+  const { user, authChecked } = useAuth();
+
+  if (!authChecked) {
+    return null; // або спіннер, якщо є
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;
